@@ -1,5 +1,9 @@
 set(SRCDIR ${PROJECT_SOURCE_DIR}/DFHydro/src/ ${PROJECT_SOURCE_DIR}/extern/)
 
+add_executable(test_bc_fix.exe ./test_bc_fix.cpp)
+target_include_directories(test_bc_fix.exe PRIVATE ${SRCDIR})
+target_link_libraries(test_bc_fix.exe DFHydro)
+
 configure_file(./test_boundary_conditions.sh ./test_boundary_conditions.sh)
 add_executable(test_boundary_conditions.exe ./test_boundary_conditions.cpp)
 target_include_directories(test_boundary_conditions.exe PRIVATE ${SRCDIR})
@@ -45,6 +49,7 @@ target_link_libraries(test_coordinates.exe DFHydro)
 configure_file(./vischydro.py ./vischydro.py)
 configure_file(./gubser_kinetics_bridge.py ./gubser_kinetics_bridge.py)
 configure_file(./VischydroMainRun.py ./VischydroMainRun.py)
+configure_file(./testwaverun.py ./testwaverun.py)
 add_executable(VischydroMain.exe ./VischydroMain.cpp)
 target_link_libraries(VischydroMain.exe DFHydro)
 
