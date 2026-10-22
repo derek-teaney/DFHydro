@@ -30,10 +30,18 @@ a.out
 *.fdb_latexmk
 *.out   
 *.log
-*.gzwork/
+*.gz
+work/
 *.exe
 *.o
 *.a
 __pycache__/
 *.pyc
 !docs/*.png
+
+# Scratch workspace
+dtwork/
+
+# Editor / tooling
+.cache/
+compile_commands.json
