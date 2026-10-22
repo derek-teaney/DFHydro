@@ -957,7 +957,7 @@ Vischydro::Vischydro(const int &nx_i, const double &xmin_i,
   TSAdapt adapt;
   TSGetAdapt(stepper, &adapt);
   TSAdaptSetType(adapt, TSADAPTNONE);
-  TSSetExactFinalTime(stepper, TS_EXACTFINALTIME_STEPOVER);
+  TSSetExactFinalTime(stepper, TS_EXACTFINALTIME_MATCHSTEP);
 
   // Set the hooks for pre-step, post-step, and post-stage
   TSSetPreStep(stepper, PreStep);
