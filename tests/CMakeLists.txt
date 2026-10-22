@@ -47,11 +47,9 @@ target_include_directories(test_coordinates.exe PRIVATE ${SRCDIR})
 target_link_libraries(test_coordinates.exe DFHydro)
 
 configure_file(./vischydro.py ./vischydro.py)
-configure_file(./gubser_kinetics_bridge.py ./gubser_kinetics_bridge.py)
 configure_file(./VischydroMainRun.py ./VischydroMainRun.py)
 configure_file(./testwaverun.py ./testwaverun.py)
 add_executable(VischydroMain.exe ./VischydroMain.cpp)
 target_link_libraries(VischydroMain.exe DFHydro)
 
 configure_file(./test_ideal_gubser.py ./test_ideal_gubser.py)
-configure_file(./test_gubser_kinetic_match.py ./test_gubser_kinetic_match.py)
