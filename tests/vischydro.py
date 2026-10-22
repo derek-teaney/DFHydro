@@ -160,6 +160,68 @@ def initialdata_grid(input_data):
     return initialdata
 
 
+def timegrid(input_data):
+    """Predict the sequence of output times written by the simulation.
+
+    Uses cfl_max * min(dx, dy) as the internal time step (capped by dt_max),
+    then returns every print_frequency-th step from t_start to t_end.
+    This is an estimate — the actual solver may adapt dt within a step.
+    """
+    xmin = input_data['VischydroMain/xmin']
+    xmax = input_data['VischydroMain/xmax']
+    ymin = input_data['VischydroMain/ymin']
+    ymax = input_data['VischydroMain/ymax']
+    nx   = input_data['VischydroMain/nx']
+    ny   = input_data['VischydroMain/ny']
+    dx = (xmax - xmin) / nx
+    dy = (ymax - ymin) / ny
+
+    cfl    = input_data['Vischydro/cfl_max']
+    dt_max = input_data['VischydroMain/dt_max']
+    dt     = min(cfl * min(dx, dy), dt_max)
+
+    t_start = input_data['VischydroMain/t_start']
+    t_end   = input_data['VischydroMain/t_end']
+    pfreq   = input_data['VischydroMain/print_frequency']
+
+    dt_out = pfreq * dt
+    n_out  = int((t_end - t_start) / dt_out) + 1
+    iout   = np.arange(n_out)
+    times  = t_start + iout * dt_out
+    mask   = times <= t_end + 1e-12 * dt_out
+    iout, times = iout[mask], times[mask]
+    return {'t': times, 'step': iout * pfreq, 'iout': iout}
+
+
+def set_timegrid(input_data, dt_out):
+    """Set print_frequency and dt_max so outputs occur every dt_out in physical time.
+
+    Computes the natural CFL time step dt, then finds the smallest print_frequency
+    such that print_frequency * dt_max = dt_out with dt_max <= dt.
+    Modifies input_data in-place.
+    """
+    xmin = input_data['VischydroMain/xmin']
+    xmax = input_data['VischydroMain/xmax']
+    ymin = input_data['VischydroMain/ymin']
+    ymax = input_data['VischydroMain/ymax']
+    nx   = input_data['VischydroMain/nx']
+    ny   = input_data['VischydroMain/ny']
+    dx = (xmax - xmin) / nx
+    dy = (ymax - ymin) / ny
+
+    cfl    = input_data['Vischydro/cfl_max']
+    dt_max = input_data['VischydroMain/dt_max']
+    dt = min(cfl * min(dx, dy), dt_max)
+
+    print_frequency = int(dt_out / dt) + 1
+    dt_max_new = dt_out / print_frequency
+
+    input_data['VischydroMain/print_frequency'] = print_frequency
+    input_data['VischydroMain/dt_max'] = dt_max_new
+    print("set_timegrid: dt={:.4g}, print_frequency={}, dt_max={:.4g}, dt_out={:.4g}".format(
+        dt, print_frequency, dt_max_new, dt_out))
+
+
 # one shoudl keep these options unless you know what you are doing
 options = {}
 

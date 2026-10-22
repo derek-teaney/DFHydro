@@ -21,7 +21,11 @@ public:
   PetscViewer H5viewer;
 
   // Ascii file for the simplicity and small data
-  std::ofstream ascii_file;
+  std::ofstream ascii_file; 
+
+  // A vector to hold the Landau frame variables
+  Vec LFsolution;
+
 
   GridMonitorContext(nlohmann::json &input, Vischydro *run_in) : run(run_in) {
     print_frequency =
@@ -45,9 +49,38 @@ public:
     if (rank == 0) {
       ascii_file.open(run_name + "_grid_t.txt");
     }
+
+    DMCreateGlobalVector(run->domain, &LFsolution);
   }
-  ~GridMonitorContext() { PetscViewerDestroy(&H5viewer); }
+  ~GridMonitorContext() {VecDestroy(&LFsolution); PetscViewerDestroy(&H5viewer); }
 };
+
+PetscErrorCode VischydroGridDFtoLDF(Vec solution, Vec LFsolution, Vischydro *run)
+{
+  // Get the solution on the charge grid
+  VischydroNode **asol;
+  PetscCall(DMDAVecGetArrayRead(run->domain, solution, &asol));
+
+  // Get the array for the Landau frame variables
+  VischydroNode **lfsol;
+  PetscCall(DMDAVecGetArray(run->domain, LFsolution, &lfsol));
+
+  // Get the corners of the domain
+  PetscInt ixs, iys, ixm, iym;
+  DMDAGetCorners(run->domain, &ixs, &iys, NULL, &ixm, &iym, NULL);
+
+  for (PetscInt j = iys; j < iys + iym; j++) {
+    for (PetscInt i = ixs; i < ixs + ixm; i++) {
+      VischydroNode &node = asol[j][i];
+      VischydroNode &lfnode = lfsol[j][i];
+      vhnode_DFtoLF(*(run->eos), node, lfnode);
+    }
+  }
+
+  PetscCall(DMDAVecRestoreArrayRead(run->domain, solution, &asol));
+  PetscCall(DMDAVecRestoreArray(run->domain, LFsolution, &lfsol));
+  return 0;
+}
 
 // This is a monitor function that is called at each timestep by the TS Object
 // It is used to write out the solution and works with GridMonitorContext to
@@ -60,8 +93,14 @@ PetscErrorCode VischydroGridMonitor(TS ts, PetscInt step, PetscReal time, Vec u,
   if (step % monitor->print_frequency == 0) {
     PetscPrintf(PETSC_COMM_WORLD, "Time, Step: %f %d \n", time, step);
     auto &solution = monitor->run->solution;
+    auto &lfsolution = monitor->LFsolution;
+    VischydroGridDFtoLDF(solution, lfsolution, monitor->run);
+
     PetscObjectSetName((PetscObject)solution, "solution");
     VecView(solution, monitor->H5viewer);
+
+    PetscObjectSetName((PetscObject)lfsolution, "lfsolution");
+    VecView(lfsolution, monitor->H5viewer);
 
     PetscViewerHDF5IncrementTimestep(monitor->H5viewer);
 
